@@ -38,8 +38,12 @@ import List from '@ckeditor/ckeditor5-list/src/list';
 import MediaEmbed from '@ckeditor/ckeditor5-media-embed/src/mediaembed';
 import Paragraph from '@ckeditor/ckeditor5-paragraph/src/paragraph';
 import PasteFromOffice from '@ckeditor/ckeditor5-paste-from-office/src/pastefromoffice';
+
 import Table from '@ckeditor/ckeditor5-table/src/table';
 import TableToolbar from '@ckeditor/ckeditor5-table/src/tabletoolbar';
+
+import MediaEmbedIframely from "../plugins/MediaEmbedIframely/MediaEmbedIframely";
+import ckeditor5Help from "../plugins/ckeditor5Help/ckeditor5Help";
 
 // export default class ClassicEditor extends ClassicEditorBase {}
 class FullEditor extends ClassicEditorBase {
@@ -82,7 +86,10 @@ FullEditor.builtinPlugins = [
 	Paragraph,
 	PasteFromOffice,
 	Table,
-	TableToolbar
+	TableToolbar,
+
+	MediaEmbedIframely,
+	ckeditor5Help
 ];
 
 MiniEditor.builtinPlugins = [
@@ -93,19 +100,29 @@ MiniEditor.builtinPlugins = [
 	Bold,
 	Italic,
 	Underline,
+	Font,
 
 	Indent,
 	IndentBlock,
 
 	Link,
 
-	Paragraph,
+	Paragraph
 ];
 
 // Editor configuration.
 FullEditor.defaultConfig = {
 	toolbar: {
 		items: [
+			'help',
+
+			'|',
+
+			'undo',
+			'redo',
+
+			'|',
+
 			'heading',
 
 			'|',
@@ -142,13 +159,13 @@ FullEditor.defaultConfig = {
 			'|',
 
 			'ckfinder',
-			'mediaEmbed',
-
-			'|',
-
-			'undo',
-			'redo'
+			'mediaEmbed'
 		]
+	},
+
+	indentBlock: {
+		offset: 1,
+		unit: 'em'
 	},
 
 	fontSize: {
@@ -160,14 +177,6 @@ FullEditor.defaultConfig = {
 			17,
 			19,
 			21
-		]
-	},
-
-	fontFamily: {
-		options: [
-			'default',
-			'Ubuntu, Arial, sans-serif',
-			'Ubuntu Mono, Courier New, Courier, monospace'
 		]
 	},
 
@@ -284,11 +293,18 @@ FullEditor.defaultConfig = {
 	},
 
 	image: {
-		toolbar: [
-			'imageStyle:full',
-			'imageStyle:side',
-			'|',
-			'imageTextAlternative'
+		// You need to configure the image toolbar, too, so it uses the new style buttons.
+		toolbar: [ 'imageTextAlternative', '|', 'imageStyle:alignRight', 'imageStyle:full', 'imageStyle:alignLeft' ],
+
+		styles: [
+			// This option is equal to a situation where no style is applied.
+			'full',
+
+			// This represents an image aligned to the left.
+			'alignLeft',
+
+			// This represents an image aligned to the right.
+			'alignRight'
 		]
 	},
 
@@ -303,6 +319,38 @@ FullEditor.defaultConfig = {
 	link: {
 		// Automatically add target="_blank" and rel="noopener noreferrer" to all external links.
 		addTargetToExternalLinks: true,
+	},
+
+	// Configure 'mediaEmbed' with Iframely previews.
+	mediaEmbed: {
+
+		// Previews are always enabled if there’s a provider for a URL (below regex catches all URLs)
+		// By default `previewsInData` are disabled, but let’s set it to `false` explicitely to be sure
+		previewsInData: false,
+
+		providers: [
+			{
+				// hint: this is just for previews. Get actual HTML codes by making API calls from your CMS
+				name: 'iframely previews',
+
+				// Match all URLs or just the ones you need:
+				url: /.+/,
+
+				html: match => {
+					const url = match[ 0 ];
+
+					return (
+						'<oembed url="'+url+'" class="not-initiated">' +
+						'<div class="ph-item" style=" border: 0;">\n' +
+						'    <div class="ph-col-12">\n' +
+						'        <div class="ph-picture">Loading Media</div>\n' +
+						'    </div>\n' +
+						'</div>' +
+						'</oembed>'
+					);
+				}
+			}
+		]
 	},
 
 	// This value must be kept in sync with the language defined in webpack.config.js.
@@ -320,13 +368,7 @@ MiniEditor.defaultConfig = {
 
 			'|',
 
-			'link',
-
-			'|',
-
-			'outdent',
-			'indent',
-
+			'link'
 		]
 	},
 	fontColor: {
